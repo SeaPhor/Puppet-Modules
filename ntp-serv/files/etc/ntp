@@ -14,7 +14,7 @@
 # set NTPD_INITIAL_NTPDATE="" to do no initial query at all.
 #
 NTPD_INITIAL_NTPDATE="AUTO"
-#NTPD_INITIAL_NTPDATE="time01.academy.com"
+#NTPD_INITIAL_NTPDATE="time01.domain.com"
 
 ## Type:           yesno
 ## Default:        no
