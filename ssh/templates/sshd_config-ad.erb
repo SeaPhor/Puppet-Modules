@@ -1,0 +1,36 @@
+# This enables accepting locale enviroment variables LC_* LANG, see sshd_config(5).
+AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+AcceptEnv LC_IDENTIFICATION LC_ALL
+
+Port 22
+Protocol 2
+ListenAddress <%= @ipaddress %>
+LoginGraceTime 60
+PermitRootLogin without-password
+MaxAuthTries 3
+MaxStartups 10
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+PrintLastLog yes
+UsePAM yes
+X11Forwarding yes
+UseLogin no
+Banner /etc/ssh/banner
+<% if @my_sshd == 'norm' %>
+AllowGroups linuxadmins Srv-Security-Admin app-monitor root splunkadm  <%= @my_ssh_groups %>
+<% end %>
+<% if @my_sshd == 'nixadmin' %>
+AllowUsers root smiller SecurityAdmin
+<% end %>
+<% if @my_sshd == 'sftp' %>
+AllowGroups linuxadmins Srv-Security-Admin app-monitor root sftponly
+Subsystem sftp internal-sftp
+Match group sftponly
+        ForceCommand internal-sftp
+        ChrootDirectory /sftp/chroot/home/%u
+        X11Forwarding no
+        AllowTcpForwarding no
+<% end %>
+<%= @my_subsys_sftp %>
