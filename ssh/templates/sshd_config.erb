@@ -19,13 +19,13 @@ X11Forwarding yes
 UseLogin no
 Banner /etc/ssh/banner
 <% if @my_sshd == 'norm' %>
-AllowGroups LinuxAdmins Srv-Security-Admin root Auto_Admin <%= @my_ssh_groups %>
+AllowGroups myAdminGroup app-monitor-Group root Auto_Admin <%= @my_ssh_groups %>
 <% end %>
 <% if @my_sshd == 'nixadmin' %>
-AllowUsers root smiller SecurityAdmin
+AllowUsers root myUser myAdmin
 <% end %>
 <% if @my_sshd == 'sftp' %>
-AllowGroups LinuxAdmins Srv-Security-Admin users sftponly
+AllowGroups myAdminGroup app-monitor-Group root sftponly
 Subsystem sftp internal-sftp
 Match group sftponly
         ForceCommand internal-sftp
