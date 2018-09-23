@@ -7,7 +7,11 @@ Port 22
 Protocol 2
 ListenAddress <%= @ipaddress %>
 LoginGraceTime 60
+<% if @my_sshd == 'norm' %>
 PermitRootLogin without-password
+<% else %>
+PermitRootLogin no
+<% end %>
 MaxAuthTries 3
 MaxStartups 10
 PubkeyAuthentication yes
