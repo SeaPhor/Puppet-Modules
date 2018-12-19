@@ -1,0 +1,220 @@
+Puppet Structure
+
+Development Server (devpup01)       =>    [push] Git Repo Server (gitrepo01:/opt/puppet/s-puppet.git)
+Non-Prod Puppet Master (testpup01)  <=    [pull] Git Repo Server (gitrepo01:/opt/puppet/s-puppet.git)
+Prod Puppet Master (prodpup01)      <=    [pull] Git Repo Server (gitrepo01:/opt/puppet/s-puppet.git)
+PCI Puppet Master (prodpup02)       <=    [pull] Git Repo Server (gitrepo01:/opt/puppet/s-puppet.git)
+
+ALL modules and manifests are created and modified EITHER on the Development Server OR on your local clone AND ONLY in YOUR environment and/or branch until tested and vetted in YOUR  environment, THEN it can be promoted to ‘dev’  environment to be tested more broadly, THEN it can be promoted to  non-production environments until approved to go to Production.
+NO CHANGES ARE EVER MADE ON THE PUPPET MASTERS THEMSELVES!
+
+              devpup01
+push             |                    
+                 V
+             Repository
+pull        /    |     \                     
+           V     V      V
+   testpup01  prodpup01 prodpup02
+
+
+All modules ‘should’ be either completely agnostic, OR contain logic to be able to work with ANY/ALL of the following:
+
+    • ANY Operating System
+    • ANY OS-Release
+    • ANY Environment
+    • ANY other “Special Needs”
+
+Puppet Basics
+Puppet-Root		=>	/etc/puppet
+Git-Root		=>	/etc/puppet
+Environment-Root	=>	<Puppet-Root>/environments/
+Node-Definitions	=>	<Environment-Root>/<env>/manifests/
+    • These are actually in the sub-dir <Environment-Root>/<env>/manifests/nodes/
+    • A Node-Definition has the client’s FQDN, all variables it needs to execute the assigned module/s, and all modules listed that it is supposed to receive.
+    • This is where all node (client) definitions are stated.
+    • All node (client) variables are declared.
+Module-Definitions	=>	<Environment-Root>/<env>/modules/
+    • A Module-Definition contains all of the parameters, configurations, variables, and dependencies to ensure a client receives the intended purpose of the module,
+    • According to ALL “Best-Practice”, github, sourceforge, and others, a single module should:
+        ◦ Stand on it’s own without the need to Create a second module just to support the first.
+        ◦ Be completely agnostic in relation to OS, OS-Release, Environment, Architecture, or any other Special Need/s
+            ▪ ALL logic to make the module “self-contained” to be defined in SINGLE module, OR, referred to a variable defined in the  Node-Definition for each client individually.
+            ▪ Every Module should be able to be copied to every environment with NO need for ANY modification and be able to be applied to ANY client regarless of OS, OS-Release, Environment, Architecture, or any other Special Need/s
+    • Puppet modules are written in Ruby and require getting used to the syntax structure
+    • Modules that manage config files
+        ◦ Config files that are “Flat” files (Require no variable replacements) are placed in the <Environment-Root>/<env>/modules/<modulename>/files/ directory.
+        ◦ Config files that are “Template” files (Require variable replacements) are placed in the <Environment-Root>/<env>/modules/<modulename>/templates/ directory.
+
+Helpful puppet commands
+## Clear Master keys and generate new one
+# puppet master –verbose –no-daemonize
+#
+## Remove client old ssl cert so it can request a new one
+# puppet cert clean <client-fqdn>
+#
+## test the syntax of a module before client-testing
+# puppet parser validate <Environment-Root>/<env>/modules/<modulename>/manifests/<init>.pp
+# 
+## Search the puppet community for a community-made module
+# puppet module search <objective/need/keyword>
+## EXAMPLE
+# puppet module search susefirewall
+## OUTPUT
+# sharumpe-susefirewall2  Manages SuSEfirewall2 in /etc/sysconf...  @sharumpe firewall suse
+## Download a module from module search EXAMPLE
+# puppet module install sharumpe-susefirewall2
+
+Facter
+Use facter to view the $variable values mentioned in a module (facter command to see ALL)
+# facter architecture operatingsystem operatingsystemrelease processorcount memorysize swapsizearchitecture => x86_64
+memorysize => 2.94 GB
+operatingsystem => SLES
+operatingsystemrelease => 12.3
+processorcount => 2
+swapsize => 2.49 GB
+
+Git Info:
+
+To ‘git’ a local clone to work out of-
+## Create structure
+# mkdir ~/mygit-repository
+# cd ~/mygit-repository
+# git clone  gitrepo01:/opt/puppet/s-puppet.git
+# cd <TAB> ## This is now your Git-Root on your local system
+
+Setup you user for commits-
+# git config --global user.name "Your Name"
+# git config --global user.email your.email@example.com
+
+Daily Usage-
+Must be in this order-
+    1. On the Development Server
+        1. Stage the changes made to commit (MUST be done from the git-clone root)
+# cd /etc/puppet
+## OR -
+# cd <Git-Root> ## if on local system
+# git add <changed-directory or file>
+
+        2. Commit the changes with a “Comment” of what was changed
+# git commit -a -m “List of changes made, and any reference- i.e. RFC#, JIRA#, etc”
+
+        3. Push the commit to the repository
+# git push origin master (Or branch if using branched git)
+
+    2. On the Puppet Master/s
+        1. Pull the commit from the repository
+# cd /etc/puppet
+# git pull origin master
+
+    3. Exit the Puppet Master
+
+Other Useful git commands-
+## Check commit status
+# git status
+## Review comments from commits 
+# git log
+
+DO NOT USE Unless you know what you’re doing!
+## Something broke in last commit- revert
+# git log # Find the commit that broke it, copy the <commit-ID>
+# git revert <commit-ID>
+#
+## Working with Branches
+# git branch # List existing branch and “*” the one you are currently in
+# git branch <branchname> # create a new branch named <branchname>
+# git checkout <branchname> # leave “master” and checkout branch <branchname>
+# git checkout master # Leave your branch and return to ‘master’
+# git merge …….. # NEVER use- Only ONE person or team should EVER do the merges
+
+
+In /etc/puppet/ on Development Server (devpup01)
+environments/
+├── dev
+├── mdev
+├── onetime
+├── pci
+├── prod
+├── production
+├── sbx
+└── uat
+
+environments/mdev/
+├── environment.conf
+├── manifests
+│   ├── nodes
+│   │   ├── cpup.pp
+│   │   ├── devnodes -> /etc/puppet/environments/dev/manifests/nodes
+│   │   ├── dpup.pp
+│   │   ├── pcinodes -> /etc/puppet/environments/pci/manifests/nodes
+│   │   ├── prdnodes -> /etc/puppet/environments/prod/manifests/nodes
+│   │   ├── sbxnodes -> /etc/puppet/environments/sbx/manifests/nodes
+│   │   ├── srdev.pp
+│   │   ├── team.pp
+│   │   ├── template.txppt
+│   │   ├── uatnodes -> /etc/puppet/environments/uat/manifests/nodes
+│   │   ├── usmg.pp
+│   └── site.pp
+└── modules
+** The "->" denotes a symlink **
+
+environments/mdev/modules/
+├── Archive
+├── Hold
+├── README
+├── ad-sl12-wb
+├── auditd
+├── cron
+├── groups
+├── hardening
+├── hosts
+├── ilmt
+├── inprogress
+├── kerberos
+├── ldap-client
+├── ldapclient
+├── localrepo
+├── nmap
+├── nscd
+├── ntp
+├── ntp-serv
+├── ntp-test
+├── pam
+├── pam_v2
+├── puppet_vim
+├── resolver
+├── rhfw
+├── rhn
+├── rhnlib-tls
+├── rhnlib-tmp
+├── rhsw
+├── samba
+├── snginx
+├── snmp
+├── splunk
+├── squid
+├── ssh
+├── sssd
+├── sssdld
+├── static
+├── stdlib
+├── sudo
+├── suma-client
+├── susefirewall2
+├── susefw
+├── synchome
+├── sysctl
+├── sysctl-pxy
+├── syslog-ng
+├── sysstat
+├── tcpdump
+├── team-docs
+├── team-scripts
+├── tlm
+├── tsm-client
+└── users
+
+Good references:
+https://puppet.com/docs/puppet/4.9/type.html#exec
+https://devops.com/puppet-best-practices/
+http://elatov.github.io/2014/09/writing-better-puppet-modules/
+http://eholzbach.github.io/blog/separating-data-from-code-using-hiera-in-puppet/
