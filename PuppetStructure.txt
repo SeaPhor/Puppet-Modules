@@ -213,6 +213,9 @@ environments/mdev/modules/
 ├── tsm-client
 └── users
 
+Setting a crontab to have the client/agent run every 30 min...
+#*/30 * * * * /usr/bin/puppet agent --verbose --no-daemonize --waitforcert 60 --environment <env> --server <puppetmaster.domain.com> > 2>&1 /dev/null
+
 Good references:
 https://puppet.com/docs/puppet/4.9/type.html#exec
 https://devops.com/puppet-best-practices/
